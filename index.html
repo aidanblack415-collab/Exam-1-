@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>USCP Practice Test – Hard Mode (60 Questions)</title>
+  <style>
+    :root { --bg:#0f1216; --card:#161b22; --text:#e6edf3; --muted:#9aa4b2; --accent:#4da3ff; --ok:#30d158; --bad:#ff453a; --warn:#ffd60a; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:24px 16px; border-bottom:1px solid #263041; background: linear-gradient(180deg, #141a22, #0f1216); }
+    h1 { margin:0 0 6px; font-size:20px; letter-spacing:.2px; }
+    .sub { margin:0; color:var(--muted); font-size:13px; line-height:1.3; }
+    main { max-width:980px; margin:0 auto; padding:16px; }
+    .controls { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 10px; }
+    button { cursor:pointer; border:1px solid #2a364a; background:#111826; color:var(--text); padding:10px 12px; border-radius:10px; font-weight:600; }
+    button:hover { border-color:#3b4b66; }
+    .pill { display:inline-flex; align-items:center; gap:8px; border:1px solid #2a364a; padding:8px 10px; border-radius:999px; color:var(--muted); font-size:12px; }
+    .pill b { color:var(--text); }
+    .grid { display:grid; gap:12px; }
+    .card { background:var(--card); border:1px solid #263041; border-radius:14px; padding:14px; }
+    .meta { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .qnum { font-weight:800; color:#cfe5ff; }
+    .tag { font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid #2a364a; color:var(--muted); }
+    .prompt { margin:10px 0 12px; line-height:1.35; }
+    .choices { display:grid; gap:8px; }
+    label.choice { display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:12px; border:1px solid #263041; background:#121826; }
+    label.choice:hover { border-color:#33415a; }
+    input[type="radio"] { margin-top:2px; }
+    .letter { width:20px; height:20px; border-radius:6px; display:grid; place-items:center; font-weight:800; background:#0d1320; border:1px solid #263041; color:#cfe5ff; flex:0 0 auto; }
+    .result { margin-top:12px; padding:12px; border-radius:12px; border:1px dashed #33415a; background:#0f1624; display:none; }
+    .result.ok { border-color: rgba(48,209,88,.5); }
+    .result.bad { border-color: rgba(255,69,58,.55); }
+    .result .headline { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .result .status { font-weight:900; }
+    .result .status.ok { color:var(--ok); }
+    .result .status.bad { color:var(--bad); }
+    .explain { margin-top:10px; color:var(--text); }
+    .explain ul { margin:8px 0 0 18px; color:var(--muted); }
+    .scorebar { margin-top:12px; padding:12px; border-radius:14px; border:1px solid #263041; background:#0e1522; display:none; }
+    .scoreline { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .scoreline b { color:#cfe5ff; }
+    .progress { height:10px; border-radius:999px; background:#0b1020; border:1px solid #263041; overflow:hidden; margin-top:10px; }
+    .progress > div { height:100%; width:0%; background: linear-gradient(90deg, #4da3ff, #30d158); }
+    .note { color:var(--muted); font-size:12px; margin-top:8px; }
+    .divider { height:1px; background:#263041; margin:12px 0; }
+    .small { font-size:12px; color:var(--muted); }
+    .warn { color: var(--warn); font-weight:700; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>USCP Practice Test – Hard Mode (60 Questions)</h1>
+    <p class="sub">
+      30 Legal “BEST charge” scenarios + 30 USCP/Procedure/Policy knowledge questions.
+      Choose A–D. Then click <b>Grade Test</b> to see right/wrong + brief explanations for every option.
+    </p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <button id="btnShuffle">Shuffle Questions</button>
+      <button id="btnGrade">Grade Test</button>
+      <button id="btnReset">Reset Answers</button>
+      <span class="pill"><b>Tip:</b> Legal questions are written so more than one charge could “fit,” but only one is the <span class="warn">BEST</span> (highest charge that cleanly hits all elements).</span>
+    </div>
+
+    <div id="scorebar" class="scorebar">
+      <div class="scoreline">
+        <div><b id="scoreText">Score:</b> <span id="scoreDetail"></span></div>
+        <div class="small" id="timeStamp"></div>
+      </div>
+      <div class="progress"><div id="progressFill"></div></div>
+      <div class="note">Review explanations under each question to see why each option is right/wrong.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="quiz" class="grid"></div>
+
+    <div class="divider"></div>
+    <p class="small">
+      If you want this to be even harder, tell me: (1) emphasize Capitol Grounds vs EJZ more, (2) add more “show-up / complainant / after-hours office” traps, or (3) add more mixed weapon + drug + warrant combos.
+    </p>
+  </main>
+
+  <script>
+    // ---------------------------
+    // Question bank (60 total)
+    // Each question:
+    // { id, category, prompt, options: [{t, why}], correctIndex, tag }
+    // Options will be shuffled per question at render-time while preserving correct.
+    // ---------------------------
+
+    const QUESTIONS = [
+      // =========================
+      // LEGAL (1–30): BEST CHARGE
+      // =========================
+
+      {
+        id: 1, category: "LEGAL", tag: "Weapons/Transport",
+        prompt: "During a traffic stop, you see a hard rifle case on the rear seat. The driver says the rifle is inside and the case latch is broken. The rifle is unloaded. A separate small lockbox contains ammunition. The driver is traveling straight through the District to a lawful out-of-state destination.",
+        options: [
+          { t: "Unlawful Transport of a Firearm", why: "Best fit when transport requirements aren’t met (e.g., unsecured/accessible transport), even if unloaded." },
+          { t: "No charge (lawful transport)", why: "Not best because the rifle case being unsecured/accessible can defeat lawful-transport compliance." },
+          { t: "Possession of Unregistered Firearm", why: "Not best if facts don’t establish DC registration requirement/possession elements beyond transport issue." },
+          { t: "Unlawful Possession of Ammunition", why: "Not best on these facts; ammo is secured and the primary issue is firearm transport/possession rules." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 2, category: "LEGAL", tag: "Weapons/Checkpoint",
+        prompt: "At a vehicle checkpoint, a driver voluntarily opens the trunk for an administrative search. You observe a loaded revolver in the trunk. The driver states they do not have a DC carry license and the firearm is not registered in DC.",
+        options: [
+          { t: "Carrying a Pistol Without a License (CPWL)", why: "Best when the core issue is pistol possession without the required DC license." },
+          { t: "Possession of an Unregistered Firearm", why: "Applies, but CPWL is typically the best/primary when pistol is possessed without DC license." },
+          { t: "No charge (secured in trunk)", why: "Not correct: trunk storage alone does not cure licensing/registration requirements." },
+          { t: "Unlawful Discharge of a Firearm", why: "Not correct: no discharge occurred." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 3, category: "LEGAL", tag: "Knife/Carry",
+        prompt: "During a traffic stop, you see a 4-inch folding knife in the center console within immediate reach of the driver. The driver says they keep it accessible for protection while driving in the city.",
+        options: [
+          { t: "Carrying a Dangerous Weapon (Knife)", why: "Best fit when the knife is carried in a manner consistent with ready access/use." },
+          { t: "Possession of a Prohibited Weapon – A", why: "Not best unless the weapon type is specifically prohibited under the PPW-A category." },
+          { t: "No charge; continue the stop", why: "Not correct if the knife meets the dangerous weapon carry elements." },
+          { t: "Unlawful Activities", why: "Not best: too vague compared to the specific weapon carry offense." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 4, category: "LEGAL", tag: "Robbery vs Theft",
+        prompt: "A suspect presses a handgun to a victim’s forehead, threatens to kill the victim, takes the victim’s phone, and flees. No shots are fired.",
+        options: [
+          { t: "Robbery", why: "Best: taking property from a person by force/fear is robbery; the gun elevates the intimidation." },
+          { t: "Assault with a Dangerous Weapon (Gun)", why: "Applies, but the BEST charge for the taking is robbery." },
+          { t: "Theft I", why: "Not best because it ignores force/fear; theft lacks the robbery element." },
+          { t: "Threats to Do Bodily Harm", why: "Applies, but robbery is the best overall for the conduct described." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 5, category: "LEGAL", tag: "Auto/Use",
+        prompt: "A vehicle is reported stolen earlier today. You stop it and detain the driver. The driver says a friend ‘loaned’ it to them but can’t provide contact information. The ignition is damaged and a window is broken. The driver has no keys.",
+        options: [
+          { t: "Theft I – Auto", why: "Best when facts strongly support stolen-auto theft (taking/keeping without right), not mere temporary use." },
+          { t: "Unauthorized Use of a Motor Vehicle (UUV)", why: "Possible if truly borrowed, but damage/no keys/indicators support theft as best." },
+          { t: "Unlawful Entry of a Motor Vehicle (UEV)", why: "Applies to entry, but the best charge centers on the stolen vehicle possession/theft." },
+          { t: "Destruction of Property", why: "Not best: damage indicators exist but primary offense is stolen auto theft." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 6, category: "LEGAL", tag: "Burglary",
+        prompt: "A suspect enters a residence through an unlocked back door, goes directly to a bedroom, removes jewelry from a drawer, and is caught leaving with the items.",
+        options: [
+          { t: "Burglary", why: "Best: unlawful entry into a dwelling with intent to commit a crime inside." },
+          { t: "Theft II", why: "Applies, but burglary is the best because the entry + intent elements are satisfied." },
+          { t: "Unlawful Entry", why: "Less complete than burglary when intent to commit a crime is shown." },
+          { t: "Receiving Stolen Property", why: "Not correct: suspect is the taker, not a receiver." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 7, category: "LEGAL", tag: "Arson/Property",
+        prompt: "A suspect pours gasoline on a neighbor’s scooter in the driveway, lights it, and flees. The scooter is damaged by fire.",
+        options: [
+          { t: "Arson", why: "Best: intentional burning of property; the fire-setting element makes this the strongest charge." },
+          { t: "Destruction of Property (Felony)", why: "Applies, but arson is best when fire is used intentionally." },
+          { t: "Theft I", why: "Not correct: no taking/stealing described." },
+          { t: "Defacing Property", why: "Not best: far more serious conduct than defacing." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 8, category: "LEGAL", tag: "Disorderly / Fear",
+        prompt: "A person approaches a group in a public park, yells obscenities from close range, refuses to stop when asked, and the group begins leaving because they are frightened by the conduct.",
+        options: [
+          { t: "Disorderly Causing Unreasonable Fear", why: "Best: conduct causes reasonable fear/disruption beyond mere annoyance." },
+          { t: "Crowding, Obstructing, or Incommoding", why: "Not best unless specific obstruction/crowding after warning is established." },
+          { t: "Affray", why: "Not correct: no mutual fighting described." },
+          { t: "Inciting a Riot", why: "Not correct: facts don’t show urging a crowd to riot." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 9, category: "LEGAL", tag: "Crowding/Obstructing",
+        prompt: "A group blocks the main entrance to a public building. You give a clear order to stop blocking the entrance. They briefly comply, then return to blocking the entrance a few minutes later.",
+        options: [
+          { t: "Crowding, Obstructing, or Incommoding", why: "Best: obstruction of entrance + lawful warning/order + resumption." },
+          { t: "Disorderly Conduct (general)", why: "Less specific than crowding/obstructing when entrance obstruction is the core issue." },
+          { t: "Unlawful Entry", why: "Not correct: they are outside and blocking, not unlawfully entering." },
+          { t: "No charge; they briefly complied", why: "Not correct: resuming after warning supports the offense." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 10, category: "LEGAL", tag: "Threats",
+        prompt: "On a public bus, a passenger angrily tells the driver, 'I’ll beat you when you get off this bus,' and repeatedly advances toward the driver until others intervene. When officers arrive, the passenger is seated and denies it.",
+        options: [
+          { t: "Threats (Misdemeanor)", why: "Best: specific threat of bodily harm communicated, corroborated by witnesses." },
+          { t: "Illegal Panhandling", why: "Not correct: asking for money is not the core criminal act here." },
+          { t: "No charge because calm on arrival", why: "Not correct: offense can be established by witness statements and prior conduct." },
+          { t: "Disorderly Public Conveyance", why: "Possible, but specific threats is the best charge on these facts." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 11, category: "LEGAL", tag: "Member of Congress Interference",
+        prompt: "A subject rushes toward a Member of Congress during an official appearance, pushes through officers, and physically resists while officers attempt to stop the subject from reaching the Member.",
+        options: [
+          { t: "Interference with a Member of Congress (18-111)", why: "Best: resisting/impeding/interfering with a Member during duties fits strongest." },
+          { t: "Resisting Arrest", why: "Applies, but 18-111 is more directly on-point with the protected victim." },
+          { t: "Simple Assault", why: "Not best unless a completed assault element is the primary provable offense." },
+          { t: "Crowding, Obstructing, or Incommoding", why: "Not best: this is direct interference/resistance involving a Member." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 12, category: "LEGAL", tag: "Sex Abuse / Voyeurism",
+        prompt: "A suspect covertly places a phone under a victim’s skirt to record without consent while the victim is unaware. No physical touching occurs.",
+        options: [
+          { t: "Voyeurism (Misdemeanor)", why: "Best: non-consensual recording of intimate area without physical contact." },
+          { t: "4th Degree Sexual Abuse", why: "Not best if there is no sexual contact element." },
+          { t: "Simple Assault", why: "Not correct: no assault described." },
+          { t: "3rd Degree Sexual Abuse", why: "Not best: requires elements beyond what’s described here." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 13, category: "LEGAL", tag: "Assault Levels",
+        prompt: "During an argument, one person shoves the other into a bar stool, causing a bruised eye. The aggressor then blocks the victim from standing and says, 'Stay down.'",
+        options: [
+          { t: "Simple Assault", why: "Best based on non-weapon physical force causing injury without felony aggravators." },
+          { t: "Assault with a Dangerous Weapon (Bar stool)", why: "Not best unless the object is used as a weapon (swung/used offensively), not just incidental contact." },
+          { t: "Felony Assault", why: "Not correct: facts don’t support felony injury/severity." },
+          { t: "Aggravated Assault", why: "Not best on these facts without required aggravating elements." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 14, category: "LEGAL", tag: "Carjacking Attempt vs Armed",
+        prompt: "At a red light, a suspect opens a driver’s door, points a knife at the driver, and demands the vehicle. The driver accelerates away before the suspect can enter or move the vehicle.",
+        options: [
+          { t: "Attempt Carjacking", why: "Best: substantial step + demand for vehicle; not completed taking." },
+          { t: "Armed Carjacking", why: "Not best if the vehicle was not taken or controlled by the suspect." },
+          { t: "ADW – Knife", why: "Applies, but the BEST is attempt carjacking since the target was the vehicle." },
+          { t: "CDW – Knife", why: "Possible, but attempt carjacking is the primary best charge." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 15, category: "LEGAL", tag: "ADW-Gun vs CPWL",
+        prompt: "A suspect approaches a victim, points a handgun at the victim, and says, 'If you don’t pay me, I’ll shoot you.' The suspect then runs away without taking property.",
+        options: [
+          { t: "Assault with a Dangerous Weapon (Gun)", why: "Best: pointing a gun with immediate threat constitutes ADW-Gun." },
+          { t: "CPWL", why: "Possession offense may apply, but ADW-Gun is the best charge from the conduct." },
+          { t: "Robbery", why: "Not correct: no taking by force/fear occurred." },
+          { t: "Threats to Do Bodily Harm", why: "Applies, but ADW-Gun is stronger when a gun is used to assault/intimidate." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 16, category: "LEGAL", tag: "Unlawful Entry (Business Hours Office)",
+        prompt: "During normal business hours in a congressional office, staff tells a visitor to leave. The staff member agrees to be the complainant. The visitor is warned they may be arrested if they refuse to leave. Staff again demands the visitor leave in your presence. The visitor refuses again and remains seated.",
+        options: [
+          { t: "Unlawful Entry", why: "Best: complainant identified + demand to leave + refusal after warning in private office." },
+          { t: "Crowding, Obstructing, or Incommoding", why: "Not best unless obstruction/crowding warning elements are the core issue." },
+          { t: "Disorderly Conduct", why: "Not best: private office unlawful entry steps are satisfied." },
+          { t: "No charge; building is open to the public", why: "Not correct: offices during business hours are treated as private for UE purposes once demand is made." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 17, category: "LEGAL", tag: "Barring Notice Violation",
+        prompt: "A subject who was previously served a barring notice for a congressional building returns within the barred period and is found inside a restricted area posted 'Staff Only.' The subject claims they forgot.",
+        options: [
+          { t: "Violation of a Barring Notice", why: "Best: prior service + entry during barred period supports the charge." },
+          { t: "Unlawful Entry", why: "May apply, but violating a barring notice is the best/most specific if provable." },
+          { t: "No charge (mistake)", why: "Not correct: forgetting doesn’t negate the entry during barred period." },
+          { t: "Crowding, Obstructing, or Incommoding", why: "Not correct: the issue is barred status/entry, not obstruction." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 18, category: "LEGAL", tag: "Marijuana – Public Consumption",
+        prompt: "On Capitol Grounds, a person is actively smoking what appears to be marijuana. CSS field tests it and confirms THC. The person has a small amount on them.",
+        options: [
+          { t: "Consumption of Marijuana in a Public Space", why: "Best: observed public consumption supported by test." },
+          { t: "Possession with Intent to Distribute", why: "Not correct: no indicators of distribution described." },
+          { t: "Possession of Drug Paraphernalia", why: "Not best: paraphernalia alone isn’t the primary offense compared to public consumption." },
+          { t: "No charge (small amount)", why: "Not correct: public consumption can still be unlawful even with a small amount." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 19, category: "LEGAL", tag: "Controlled Substances – Intent",
+        prompt: "During a lawful stop, you recover multiple small baggies of a controlled substance, a digital scale, and a large amount of small-denomination cash. The suspect’s phone shows recent messages coordinating sales.",
+        options: [
+          { t: "Possession with Intent to Distribute", why: "Best: packaging + scale + cash + communications strongly indicate intent." },
+          { t: "Simple Possession", why: "Not best: indicators go beyond personal use." },
+          { t: "Possession of Drug Paraphernalia", why: "Applies, but not best: the core criminality is distribution intent." },
+          { t: "No charge until lab confirmation", why: "Not best: field test + indicators can establish PC for the best charge." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 20, category: "LEGAL", tag: "Paraphernalia Nuance",
+        prompt: "You find a glass pipe with visible residue and a small amount of controlled substance on the same person. The pipe field tests positive for residue.",
+        options: [
+          { t: "Possession of Drug Paraphernalia", why: "Best: paraphernalia supported by residue and contemporaneous drug possession." },
+          { t: "No charge (pipe alone)", why: "Not correct on these facts; residue + controlled substance supports paraphernalia charge." },
+          { t: "Possession with Intent to Distribute", why: "Not correct: no distribution indicators described." },
+          { t: "Illegal Panhandling", why: "Not related." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 21, category: "LEGAL", tag: "Unlawful Discharge vs CPWL",
+        prompt: "Just after midnight, a subject fires a handgun into the air. Officers safely secure the subject. The subject has a DC firearms registration card but no DC carry license.",
+        options: [
+          { t: "Unlawful Discharge of a Firearm", why: "Best: discharge is the most serious, most direct offense described." },
+          { t: "CPWL", why: "May apply, but not best compared to actual discharge." },
+          { t: "Disorderly Loud Noises at Night", why: "Not best: firearm discharge is more serious and specific." },
+          { t: "POCA", why: "Not best: alcohol may be present, but discharge is the primary provable offense." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 22, category: "LEGAL", tag: "Ammo w/ No Firearm Found",
+        prompt: "A person enters a building, screening alarms at the waist, and you recover a 4-inch folding knife. X-ray of the bag reveals multiple shotgun shells. No firearm is located.",
+        options: [
+          { t: "Unlawful Possession of Ammunition", why: "Best: ammunition possession offense stands even without a firearm present, depending on elements." },
+          { t: "No charge because no firearm", why: "Not correct: ammo can be independently unlawful." },
+          { t: "Unlawful Discharge", why: "Not correct: no discharge occurred." },
+          { t: "Robbery", why: "Not related." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 23, category: "LEGAL", tag: "PPW-A vs CDW",
+        prompt: "A visitor approaches an officer at a public entrance and asks where to secure a switchblade before entering.",
+        options: [
+          { t: "Possession of a Prohibited Weapon – A", why: "Best: switchblade fits prohibited weapon category (PPW-A) in typical training frameworks." },
+          { t: "Carrying a Dangerous Weapon (Knife)", why: "Applies to many knives, but prohibited weapon is the best when the item is specifically prohibited." },
+          { t: "No charge because they asked", why: "Not correct: voluntary disclosure doesn’t legalize possession." },
+          { t: "Unlawful Activities", why: "Not best: specific prohibited weapon charge fits." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 24, category: "LEGAL", tag: "Show-Up Identification",
+        prompt: "A suspect is detained near the scene shortly after a robbery based on matching description. The complainant arrives, views the suspect, and says the suspect is NOT the offender. No other PC develops.",
+        options: [
+          { t: "Release the suspect; do not prolong solely for a name check", why: "Best: if reasons for stop dissipate and no PC exists, continued detention is improper." },
+          { t: "Hold the suspect until WALES/NCIC returns", why: "Not best if no other investigation is occurring and reasonable suspicion has dissipated." },
+          { t: "Arrest for Failure to Cooperate", why: "Not correct: refusal/silence alone doesn’t create PC." },
+          { t: "Convert to frisk-only and continue detention", why: "Not correct: frisk requires RS that suspect is armed and dangerous." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 25, category: "LEGAL", tag: "Stop/Frisk Scope",
+        prompt: "During a lawful stop, you pat down outer clothing and feel a small soft object. You are confident it is not a weapon, but you keep squeezing/manipulating it until you decide it might be contraband.",
+        options: [
+          { t: "This exceeds frisk scope; continued manipulation is improper", why: "Best: frisk is for weapons; contraband seizure requires 'immediately apparent' without manipulation." },
+          { t: "This is proper because any suspicious object can be manipulated", why: "Not correct: Terry frisk limits manipulation beyond weapon check." },
+          { t: "This is proper if the subject is nervous", why: "Not correct: nervousness doesn’t expand frisk scope." },
+          { t: "This is proper only if you ran NCIC first", why: "Not correct: NCIC does not control frisk scope legality." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 26, category: "LEGAL", tag: "Witness Stop",
+        prompt: "After a violent offense, you reasonably believe a nearby person saw the suspect flee. The person attempts to leave quickly. You briefly detain the person to get name/DOB/address for investigators.",
+        options: [
+          { t: "Stop of a witness to obtain ID information", why: "Best: permitted when officer reasonably believes witness has valuable information; minimal force only." },
+          { t: "Arrest the witness for obstruction", why: "Not correct: leaving doesn’t automatically equal obstruction." },
+          { t: "Frisk the witness automatically", why: "Not correct: frisk requires RS armed/dangerous, not mere witness status." },
+          { t: "No contact permitted; witnesses cannot be detained", why: "Not correct: limited witness stops are permitted in certain circumstances." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 27, category: "LEGAL", tag: "Warrant/Fugitive",
+        prompt: "A subject in DC is wanted on an out-of-state warrant. Dispatch advises a possible hit. Before any seizure based on the warrant, what must occur?",
+        options: [
+          { t: "Confirm the warrant with the originating agency (ORI) and verify extradition willingness", why: "Best: confirmation/extradition is required before arrest on out-of-jurisdiction warrant." },
+          { t: "Arrest immediately once dispatch says 'hit'", why: "Not correct: hits must be confirmed before arrest/seizure on warrant." },
+          { t: "Release immediately; out-of-state warrants never apply", why: "Not correct: they can apply if confirmed and extraditable." },
+          { t: "Only run a local name check; no confirmation needed", why: "Not correct: confirmation is required." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 28, category: "LEGAL", tag: "Bench Warrant Handling",
+        prompt: "A subject has an active DC bench warrant for failing to appear. What is the best description of the warrant’s purpose?",
+        options: [
+          { t: "Commands law enforcement to bring the subject before a judge ASAP", why: "Best: bench warrants compel appearance before court." },
+          { t: "Authorizes only a property search", why: "Not correct: bench warrants relate to persons/appearance." },
+          { t: "Expires immediately after issuance", why: "Not correct." },
+          { t: "Is only valid if the complainant is present", why: "Not correct: court/judge is complainant." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 29, category: "LEGAL", tag: "Seizure vs Contact",
+        prompt: "An officer approaches a person in a public area, asks if they’ll answer questions, requests ID, briefly examines it, and returns it. The person refuses to answer and walks away. No physical blocking occurs.",
+        options: [
+          { t: "This is a voluntary contact (no seizure) on these facts", why: "Best: asking questions and requesting ID alone does not automatically create a stop." },
+          { t: "This is automatically a stop because the officer spoke", why: "Not correct: conversation alone is not a seizure." },
+          { t: "This is a frisk because ID was requested", why: "Not correct." },
+          { t: "This is an arrest because the subject refused", why: "Not correct: refusal alone is not PC." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 30, category: "LEGAL", tag: "Use of Force in Stop",
+        prompt: "During a lawful investigative detention, the subject repeatedly attempts to pull away and reach toward the waistband. You have articulable safety concerns. What is the best statement about handcuffing?",
+        options: [
+          { t: "Handcuffing can be reasonable during a stop if needed for officer safety", why: "Best: permitted when officer can articulate safety concerns; not automatically an arrest." },
+          { t: "Handcuffing is never allowed during a stop", why: "Not correct: can be allowed based on safety." },
+          { t: "Handcuffing always converts a stop into an arrest", why: "Not always; depends on reasonableness and duration/scope." },
+          { t: "Handcuffing is allowed only after NCIC returns", why: "Not correct: safety can require immediate action." }
+        ],
+        correctIndex: 0
+      },
+
+      // =========================
+      // NON-LAW (31–60)
+      // =========================
+
+      {
+        id: 31, category: "USCP / POLICY", tag: "Forms",
+        prompt: "Per training guidance, which form is used to document a Stop or Contact for submission to a supervisor?",
+        options: [
+          { t: "PD-76 or CP-76A", why: "Correct: those are used for stop/contact documentation in this framework." },
+          { t: "CP-535 only", why: "Incorrect: CP-535 is department discipline, not stop/contact documentation." },
+          { t: "PD-251 only", why: "Incorrect: PD-251 is used for stop-and-frisk event reporting (different context)." },
+          { t: "CP-550 only", why: "Incorrect: CP-550 is a Personal Performance Note." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 32, category: "USCP / POLICY", tag: "Stops/Contacts",
+        prompt: "During a contact, which statement is TRUE?",
+        options: [
+          { t: "The citizen is free to leave and not required to answer questions", why: "Correct: contacts are voluntary; no requirement to respond." },
+          { t: "A frisk is permitted during any contact", why: "Incorrect: frisk requires reasonable suspicion armed/dangerous during a stop." },
+          { t: "Contacts require reasonable suspicion", why: "Incorrect: contacts have no minimum legal justification." },
+          { t: "Officers may use acceptable force to keep the person for 20 minutes", why: "Incorrect: force to keep them would convert to seizure/stop." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 33, category: "USCP / POLICY", tag: "Stop Duration",
+        prompt: "In general training guidance, the permissible duration of a stop is best described as:",
+        options: [
+          { t: "As brief as possible; commonly 15–20 minutes depending on circumstances", why: "Correct: duration should be brief; can increase with seriousness/uncovered facts." },
+          { t: "Exactly 20 minutes maximum", why: "Incorrect: not a hard cap; depends on facts." },
+          { t: "Unlimited until NCIC returns", why: "Incorrect: cannot hold solely for name check when RS dissipates." },
+          { t: "At least 45 minutes to complete paperwork", why: "Incorrect: duration should be brief and tied to investigation." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 34, category: "USCP / POLICY", tag: "NCIC Hit Steps",
+        prompt: "A WALES/NCIC 'hit' must go through which three-step sequence (in order)?",
+        options: [
+          { t: "Verified → Confirmed → Locate", why: "Correct: verify identity, confirm with ORI, then locate entry/clear." },
+          { t: "Locate → Verified → Confirmed", why: "Incorrect order." },
+          { t: "Confirmed → Locate → Verified", why: "Incorrect order." },
+          { t: "Verified → Locate → Confirmed", why: "Incorrect order." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 35, category: "USCP / POLICY", tag: "NCIC Systems",
+        prompt: "Which system is described as the local 'home' system that is administered by MPD and automatically checked nationally by NCIC?",
+        options: [
+          { t: "WALES", why: "Correct: WALES is the local system (per your notes) with national checks via NCIC." },
+          { t: "NLETS", why: "Incorrect: NLETS is a message switching system." },
+          { t: "III", why: "Incorrect: III is a criminal history index check." },
+          { t: "CJIS", why: "Incorrect in this context: CJIS is broader FBI infrastructure, not the local home system." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 36, category: "USCP / POLICY", tag: "Radio / Safety",
+        prompt: "Best practice for radio use during contacts/stops is:",
+        options: [
+          { t: "Secure the scene first and call for backup early when feasible", why: "Correct: safety first; update dispatch with location/needs and escalate with priority if needed." },
+          { t: "Always wait until after approach to request backup", why: "Incorrect: early request is recommended when safe." },
+          { t: "Never use 'PRIORITY' unless shots fired", why: "Incorrect: priority depends on circumstances." },
+          { t: "Avoid giving dispatch your location", why: "Incorrect: location/needs should be broadcast." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 37, category: "USCP / POLICY", tag: "Complaint Process",
+        prompt: "A complaint is made in person against an employee. If a supervisor is not available, what should the receiving employee do?",
+        options: [
+          { t: "Complete a complaint report form (CP-536) and forward it to a supervisor", why: "Correct: CP-536 is used when supervisor is not available." },
+          { t: "Refuse to accept the complaint unless written", why: "Incorrect: complaints may be in person, phone, or writing; anonymous accepted." },
+          { t: "Resolve it verbally and do not document", why: "Incorrect: complaints are investigated and require documentation." },
+          { t: "Tell the complainant to contact OPR directly and leave", why: "Incorrect: employee has responsibilities to notify/document." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 38, category: "USCP / POLICY", tag: "Category I vs II",
+        prompt: "Which allegation is most consistent with a Category I complaint?",
+        options: [
+          { t: "Truthfulness/Integrity violation", why: "Correct: integrity issues are Category I in your notes." },
+          { t: "Courtesy complaint", why: "Incorrect: typically Category II." },
+          { t: "Minor policy violation", why: "Incorrect: typically Category II." },
+          { t: "Carrying of credentials issue", why: "Incorrect: typically Category II." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 39, category: "USCP / POLICY", tag: "Discipline Forms",
+        prompt: "Which form is used for Command Discipline (warning) that may be appealed within 15 days and is removed after 1 year (per your notes)?",
+        options: [
+          { t: "CP-534 (Warning)", why: "Correct: CP-534 warning is removable after 1 year (per notes)." },
+          { t: "CP-535", why: "Incorrect: CP-535 is department discipline level with potential forfeiture time." },
+          { t: "CP-550", why: "Incorrect: Personal Performance Note." },
+          { t: "PD-252", why: "Incorrect: supplemental report for stop/frisk documentation context." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 40, category: "USCP / POLICY", tag: "DRB",
+        prompt: "Which position is the only sworn member permitted to remain armed during a Disciplinary Review Board (DRB) hearing (per your notes)?",
+        options: [
+          { t: "Bailiff (Sergeant)", why: "Correct: bailiff is the only sworn permitted to remain armed." },
+          { t: "Presiding Officer (Inspector+)", why: "Incorrect: presiding officer is not the only armed role." },
+          { t: "Respondent", why: "Incorrect: respondent secures firearm prior to admin interviews/hearings." },
+          { t: "Union Representative", why: "Incorrect: not the designated armed role." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 41, category: "USCP / POLICY", tag: "Rights",
+        prompt: "Which statement best distinguishes Garrity from Miranda in an administrative investigation?",
+        options: [
+          { t: "Garrity compels answers administratively; Miranda protects against self-incrimination in custodial interrogation", why: "Correct: that’s the core distinction." },
+          { t: "Miranda compels answers; Garrity allows silence", why: "Incorrect: reversed." },
+          { t: "Both only apply during traffic stops", why: "Incorrect." },
+          { t: "Weingarten is the same as Miranda", why: "Incorrect: Weingarten is union representation right in investigatory interviews." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 42, category: "USCP / POLICY", tag: "Weingarten",
+        prompt: "Weingarten Rights primarily refer to:",
+        options: [
+          { t: "Union representation during interviews that could lead to discipline", why: "Correct: bargaining unit employees can request representation." },
+          { t: "The right to remain silent during a stop", why: "Incorrect: that is not Weingarten." },
+          { t: "Permission to search incident to arrest", why: "Incorrect." },
+          { t: "Authority to frisk during contacts", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 43, category: "USCP / POLICY", tag: "Capitol Police Board",
+        prompt: "Which set correctly identifies the members of the Capitol Police Board (per your notes)?",
+        options: [
+          { t: "House Sergeant at Arms, Senate Sergeant at Arms, Architect of the Capitol, Chief of Police", why: "Correct: those are the four listed." },
+          { t: "Chief of Staff, IG, OGC, COP", why: "Incorrect: those are executive/support roles, not the Board." },
+          { t: "Speaker, Majority Leader, AOC, COP", why: "Incorrect." },
+          { t: "MPD Chief, FBI SAC, AOC, COP", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 44, category: "USCP / POLICY", tag: "Quadrants",
+        prompt: "Which streets divide the city into sectors (per your notes)?",
+        options: [
+          { t: "North Capitol, South Capitol, East Capitol, and the Mall", why: "Correct: those are the key dividers listed." },
+          { t: "Pennsylvania Ave and Constitution Ave", why: "Incorrect: those are major avenues, not the sector dividers." },
+          { t: "Western Ave and Eastern Ave only", why: "Incorrect: those are boundary avenues, not sector dividers." },
+          { t: "There is a West Capitol Street divider", why: "Incorrect: your notes state there is no West Capitol Street." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 45, category: "USCP / POLICY", tag: "City Grid",
+        prompt: "In DC’s grid, numbered streets generally run:",
+        options: [
+          { t: "North–South", why: "Correct: numbered streets run N/S in the system described." },
+          { t: "East–West", why: "Incorrect: lettered streets run E/W." },
+          { t: "Only diagonally", why: "Incorrect." },
+          { t: "They do not affect block numbers", why: "Incorrect: numbered/lettered dictate block numbers per notes." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 46, category: "USCP / POLICY", tag: "Avenues",
+        prompt: "When estimating block number behavior, an avenue can be treated like a letter street if it runs more:",
+        options: [
+          { t: "East–West than North–South", why: "Correct: your notes state treat as letter street if it runs more E/W." },
+          { t: "North–South than East–West", why: "Incorrect: that’s the numbered-street treatment." },
+          { t: "Diagonally only and it always dictates block numbers", why: "Incorrect: avenues do not dictate block numbers per notes." },
+          { t: "Only when it is Pennsylvania Ave", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 47, category: "USCP / POLICY", tag: "LE Firearms Admittance",
+        prompt: "For an armed LEO/agent entering Capitol Buildings on official business with prior notification, the general rule is:",
+        options: [
+          { t: "Escort required, credentials verified, issue daily/weekly LE credential; no admin search required", why: "Correct: per your notes for notified protection/business entries." },
+          { t: "No escort and no credential checks needed", why: "Incorrect." },
+          { t: "Admin search is always required even with prior notification", why: "Incorrect per your notes." },
+          { t: "LEOs may enter armed off duty for tours", why: "Incorrect: off duty must secure weapon." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 48, category: "USCP / POLICY", tag: "Off Duty Armed Entry",
+        prompt: "A sworn LEO arrives off duty to tour the Capitol and wants to keep their firearm. Best practice per your notes:",
+        options: [
+          { t: "Verify credentials and require weapon to be secured in a lock box; refuse entry if they refuse", why: "Correct: no one enters armed off duty; supervisor if refusal." },
+          { t: "Allow entry because they are law enforcement", why: "Incorrect." },
+          { t: "Confiscate the firearm permanently", why: "Incorrect: secure in lock box per procedure." },
+          { t: "Ignore and let screening handle it", why: "Incorrect: officer must follow directive and involve supervisor if needed." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 49, category: "USCP / POLICY", tag: "Show-Up Timing",
+        prompt: "General guideline for show-up IDs (per your notes): identification should be attempted when the suspect is detained close to the scene and within:",
+        options: [
+          { t: "2 hours of the offense (absent special permission/exceptions)", why: "Correct: 2-hour guideline is stated." },
+          { t: "24 hours of the offense", why: "Incorrect." },
+          { t: "Only if the suspect confesses first", why: "Incorrect." },
+          { t: "Only after the warrant is served", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 50, category: "USCP / POLICY", tag: "Miranda",
+        prompt: "Per your notes, Miranda warnings are required:",
+        options: [
+          { t: "When there is intent to arrest and before incriminating questions in custody", why: "Correct: custody + interrogation triggers." },
+          { t: "During all detentions, even without questions", why: "Incorrect." },
+          { t: "Only after booking", why: "Incorrect." },
+          { t: "Whenever a person refuses to cooperate", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 51, category: "USCP / POLICY", tag: "Stop vs Arrest Radio",
+        prompt: "Which radio phrasing best matches your notes about stop vs arrest language?",
+        options: [
+          { t: "'Hold me with one in custody' indicates a STOP; 'I have one in custody' indicates an ARREST", why: "Correct per your notes." },
+          { t: "Both phrases always mean arrest", why: "Incorrect." },
+          { t: "Both phrases always mean stop", why: "Incorrect." },
+          { t: "Neither phrase is ever used", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 52, category: "USCP / POLICY", tag: "Frisk Timing",
+        prompt: "Best practice for frisk timing during a stop is:",
+        options: [
+          { t: "As soon as reasonable suspicion of danger appears", why: "Correct: officer safety priority." },
+          { t: "Only after the name check returns", why: "Incorrect: name check doesn’t reveal immediate weapon risk." },
+          { t: "Only at the end of the stop", why: "Incorrect." },
+          { t: "Only if the subject consents", why: "Incorrect: frisk is based on RS armed/dangerous." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 53, category: "USCP / POLICY", tag: "Frisk Scope",
+        prompt: "Which statement is most accurate about frisk scope?",
+        options: [
+          { t: "A frisk is a limited pat-down for weapons/hard objects; not a search for contraband", why: "Correct: Terry weapons frisk scope." },
+          { t: "A frisk allows opening any locked container", why: "Incorrect." },
+          { t: "A frisk always includes searching the trunk", why: "Incorrect: trunk not immediate control." },
+          { t: "A frisk allows reaching under heavy clothing without any felt object", why: "Incorrect: must have articulation; generally feel first." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 54, category: "USCP / POLICY", tag: "Vehicle Protective Search",
+        prompt: "A protective frisk of a vehicle’s passenger compartment is restricted to:",
+        options: [
+          { t: "Areas within immediate control where a weapon could be placed/hidden", why: "Correct: limited protective search rationale." },
+          { t: "Any location including trunk without articulation", why: "Incorrect: trunk is not immediate control." },
+          { t: "Only glove box and nowhere else", why: "Incorrect." },
+          { t: "Only if the driver consents", why: "Incorrect: protective search is based on articulated RS of weapons risk." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 55, category: "USCP / POLICY", tag: "WALES/NCIC Use",
+        prompt: "WALES/NCIC/NLETS information is to be used:",
+        options: [
+          { t: "For legitimate law enforcement purposes only and restricted to administration of justice", why: "Correct: misuse can lead to criminal/civil/discipline." },
+          { t: "For checking neighbors and friends when curious", why: "Incorrect: unauthorized use." },
+          { t: "Only for vehicle tags, never for names", why: "Incorrect: name checks are a common use." },
+          { t: "Only supervisors may request checks", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 56, category: "USCP / POLICY", tag: "Race Codes",
+        prompt: "In the system race codes listed in your notes, 'A' stands for:",
+        options: [
+          { t: "Asian / Pacific Islander", why: "Correct per your notes." },
+          { t: "American Indian / Native Alaskan", why: "Incorrect: that is 'I' in your notes." },
+          { t: "Unknown", why: "Incorrect: unknown is 'U'." },
+          { t: "White", why: "Incorrect: white is 'W'." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 57, category: "USCP / POLICY", tag: "Bargaining Unit",
+        prompt: "Bargaining Unit employees (per your notes) are entitled to:",
+        options: [
+          { t: "Union representation (Weingarten Rights)", why: "Correct: bargaining unit includes sworn employees (including probationary) and certain civilians." },
+          { t: "Automatic dismissal of all complaints", why: "Incorrect." },
+          { t: "Exemption from administrative interviews", why: "Incorrect." },
+          { t: "No discipline ever", why: "Incorrect." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 58, category: "USCP / POLICY", tag: "Investigative Timelines",
+        prompt: "Sworn Category I complaint investigative timeframe in your notes is:",
+        options: [
+          { t: "120 days", why: "Correct: sworn Cat I = 120 days per notes." },
+          { t: "45 days", why: "Incorrect: that’s civilian Cat II per notes." },
+          { t: "60 days", why: "Incorrect: sworn Cat II per notes." },
+          { t: "95 days", why: "Incorrect: civilian Cat I per notes." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 59, category: "USCP / POLICY", tag: "Ranks",
+        prompt: "Which rank is associated with 'Oak Leaf' in your notes?",
+        options: [
+          { t: "Inspector", why: "Correct per your notes." },
+          { t: "Captain", why: "Incorrect: Captain is listed as 'Army' in your notes." },
+          { t: "Lieutenant", why: "Incorrect: Lieutenant is 'Gold Bar' in your notes." },
+          { t: "Deputy Chief", why: "Incorrect: Deputy Chief is '2 Star' in your notes." }
+        ],
+        correctIndex: 0
+      },
+      {
+        id: 60, category: "USCP / POLICY", tag: "Paperwork – Stop & Frisk",
+        prompt: "Per your notes, a 'Stop and Frisk' is documented using:",
+        options: [
+          { t: "PD-251 Event Report and PD-252 Supplemental Report (classification: Stop and Frisk)", why: "Correct: that’s the documentation pair described." },
+          { t: "PD-76 only", why: "Incorrect: PD-76/CP-76A are for contact/stop documentation." },
+          { t: "CP-534 and CP-535", why: "Incorrect: those are discipline forms." },
+          { t: "No report is required if nothing is found", why: "Incorrect: stop/frisk is documented regardless if conducted." }
+        ],
+        correctIndex: 0
+      },
+    ];
+
+    // ---------------------------
+    // Utilities
+    // ---------------------------
+    function shuffleArray(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function nowStamp() {
+      const d = new Date();
+      return d.toLocaleString();
+    }
+
+    // ---------------------------
+    // Render logic with per-question option shuffle
+    // ---------------------------
+    let state = {
+      order: QUESTIONS.map(q => q.id),
+      rendered: [], // [{id, shuffledOptions, correctShuffledIndex}]
+    };
+
+    const quizEl = document.getElementById("quiz");
+    const scorebarEl = document.getElementById("scorebar");
+    const scoreTextEl = document.getElementById("scoreText");
+    const scoreDetailEl = document.getElementById("scoreDetail");
+    const progressFillEl = document.getElementById("progressFill");
+    const timeStampEl = document.getElementById("timeStamp");
+
+    function buildRendered() {
+      const idToQ = new Map(QUESTIONS.map(q => [q.id, q]));
+      state.rendered = state.order.map(id => {
+        const q = idToQ.get(id);
+        // Shuffle options but track the new correct index
+        const indexed = q.options.map((opt, idx) => ({ opt, idx }));
+        const shuffledIndexed = shuffleArray(indexed);
+        const correctShuffledIndex = shuffledIndexed.findIndex(x => x.idx === q.correctIndex);
+        const shuffledOptions = shuffledIndexed.map(x => x.opt);
+        return { id: q.id, q, shuffledOptions, correctShuffledIndex };
+      });
+    }
+
+    function renderQuiz() {
+      quizEl.innerHTML = "";
+      buildRendered();
+
+      state.rendered.forEach((item, i) => {
+        const q = item.q;
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.qid = q.id;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerHTML = `
+          <div>
+            <div class="qnum">Q${i+1}. <span class="small">(${q.category})</span></div>
+            <div class="small">${q.tag ? q.tag : ""}</div>
+          </div>
+          <div class="tag">${q.category}</div>
+        `;
+
+        const prompt = document.createElement("div");
+        prompt.className = "prompt";
+        prompt.textContent = q.prompt;
+
+        const choices = document.createElement("div");
+        choices.className = "choices";
+
+        const letters = ["A","B","C","D"];
+        item.shuffledOptions.forEach((opt, idx) => {
+          const choiceId = `q${q.id}_opt${idx}`;
+          const lbl = document.createElement("label");
+          lbl.className = "choice";
+          lbl.setAttribute("for", choiceId);
+          lbl.innerHTML = `
+            <input type="radio" name="q${q.id}" id="${choiceId}" value="${idx}" />
+            <span class="letter">${letters[idx]}</span>
+            <span>${opt.t}</span>
+          `;
+          choices.appendChild(lbl);
+        });
+
+        const result = document.createElement("div");
+        result.className = "result";
+        result.id = `res_${q.id}`;
+
+        card.appendChild(meta);
+        card.appendChild(prompt);
+        card.appendChild(choices);
+        card.appendChild(result);
+
+        quizEl.appendChild(card);
+      });
+    }
+
+    // ---------------------------
+    // Grading
+    // ---------------------------
+    function grade() {
+      let correct = 0;
+      let answered = 0;
+
+      state.rendered.forEach((item, idxInPage) => {
+        const q = item.q;
+        const res = document.getElementById(`res_${q.id}`);
+        const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+        const letters = ["A","B","C","D"];
+        const correctIdx = item.correctShuffledIndex;
+
+        // Build per-option explanations (brief)
+        const explList = item.shuffledOptions.map((opt, i) => {
+          const isCorrect = (i === correctIdx);
+          return `<li><b>${letters[i]}.</b> ${opt.t} — ${isCorrect ? "<span style='color:var(--ok);font-weight:800;'>RIGHT:</span>" : "<span style='color:var(--bad);font-weight:800;'>WRONG:</span>"} ${opt.why}</li>`;
+        }).join("");
+
+        if (!selected) {
+          res.style.display = "block";
+          res.classList.remove("ok","bad");
+          res.innerHTML = `
+            <div class="headline">
+              <div class="status bad">Unanswered</div>
+              <div class="small">Correct: <b>${letters[correctIdx]}</b></div>
+            </div>
+            <div class="explain">
+              <div><b>Why:</b> Review each option:</div>
+              <ul>${explList}</ul>
+            </div>
+          `;
+          return;
+        }
+
+        answered++;
+        const selIdx = parseInt(selected.value, 10);
+        const isRight = (selIdx === correctIdx);
+        if (isRight) correct++;
+
+        res.style.display = "block";
+        res.classList.toggle("ok", isRight);
+        res.classList.toggle("bad", !isRight);
+
+        res.innerHTML = `
+          <div class="headline">
+            <div class="status ${isRight ? "ok" : "bad"}">${isRight ? "Correct" : "Incorrect"}</div>
+            <div class="small">Your answer: <b>${letters[selIdx]}</b> • Correct: <b>${letters[correctIdx]}</b></div>
+          </div>
+          <div class="explain">
+            <div><b>Why:</b> Brief right/wrong for each option:</div>
+            <ul>${explList}</ul>
+          </div>
+        `;
+      });
+
+      const total = state.rendered.length;
+      scorebarEl.style.display = "block";
+      const pct = Math.round((correct / total) * 100);
+      scoreTextEl.textContent = `Score: ${correct}/${total}`;
+      scoreDetailEl.textContent = `Answered ${answered}/${total} • ${pct}%`;
+      progressFillEl.style.width = `${pct}%`;
+      timeStampEl.textContent = `Graded: ${nowStamp()}`;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetAnswers() {
+      document.querySelectorAll("input[type='radio']").forEach(r => r.checked = false);
+      document.querySelectorAll(".result").forEach(r => { r.style.display = "none"; r.classList.remove("ok","bad"); r.innerHTML = ""; });
+      scorebarEl.style.display = "none";
+      progressFillEl.style.width = "0%";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function shuffleQuestions() {
+      state.order = shuffleArray(state.order);
+      renderQuiz();
+      scorebarEl.style.display = "none";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Init
+    renderQuiz();
+
+    // Buttons
+    document.getElementById("btnGrade").addEventListener("click", grade);
+    document.getElementById("btnReset").addEventListener("click", resetAnswers);
+    document.getElementById("btnShuffle").addEventListener("click", shuffleQuestions);
+  </script>
+</body>
+</html>
